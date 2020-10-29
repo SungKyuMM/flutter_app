@@ -80,11 +80,11 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
       ),
       Row(
         children: <Widget>[
-          RaisedButton(
-            child: Text('앨범'),
-            onPressed: () => onPhoto(ImageSource.gallery),
-            // 앨범에서 선택
-          ),
+          // RaisedButton(
+          //   child: Text('앨범'),
+          //   onPressed: () => onPhoto(ImageSource.gallery),
+          //   // 앨범에서 선택
+          // ),
           // RaisedButton(
           //   child: Text('카메라'),
           //   onPressed: () => onPhoto(ImageSource.camera),
@@ -145,13 +145,6 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
         var now = new DateTime.now();
         String fileName1 = DateFormat('yyyy-MM-dd hh-mm-ss.').format(now);
 
-        Fluttertoast.showToast(msg: "12",
-            backgroundColor: Colors.white,
-            textColor: Colors.black,
-            toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.TOP);
-
-
         int fileCount = 0;
         for (Asset asset in imageList) {
           fileCount = fileCount +1;
@@ -164,25 +157,12 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
                   'file', imageD, filename: fileName1+ fileCount.toString().padLeft(3,'0')+".png"  )
           );
 
-
-          Fluttertoast.showToast(msg: "34",
-              backgroundColor: Colors.white,
-              textColor: Colors.black,
-              toastLength: Toast.LENGTH_SHORT,
-              gravity: ToastGravity.TOP);
-
-
           request.fields['dept'] = deptName;
           var res = await request.send();
 
-          Fluttertoast.showToast(msg: "56",
-              backgroundColor: Colors.white,
-              textColor: Colors.black,
-              toastLength: Toast.LENGTH_LONG,
-              gravity: ToastGravity.TOP);
           if(res.statusCode==200)
             {
-              Fluttertoast.showToast(msg: "전송완료",
+              Fluttertoast.showToast(msg: "전송완료 - "+ fileCount.toString()+"/"+imageList.length.toString(),
                   backgroundColor: Colors.white,
                   textColor: Colors.black,
                   toastLength: Toast.LENGTH_SHORT,
