@@ -92,7 +92,7 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
           // ),
           RaisedButton(
             child: Text('사진선택'),
-            onPressed: () { getImage(); }
+            onPressed: imageList.length==0 ? () { getImage(); } : null
           ),
         ],
         mainAxisAlignment: MainAxisAlignment.center,
@@ -178,6 +178,9 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
             }
           log(" ${res.statusCode} ");
         }
+        setState(() {
+          imageList.clear();
+        });
       }
     }
 }
