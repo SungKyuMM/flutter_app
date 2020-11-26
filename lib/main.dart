@@ -10,8 +10,11 @@ import 'package:flutter_absolute_path/flutter_absolute_path.dart';
 import 'dart:developer';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 void main() {
-  runApp(MyApp());
+  WidgetsFlutterBinding.ensureInitialized();   SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft]).then((_) {
+    runApp(MyApp());
+  });
 }
 
 class MyApp extends StatelessWidget {
@@ -19,24 +22,25 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'SGS Upload Test',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
-        primarySwatch: Colors.blue,
-        // This makes the visual density adapt to the platform that you run
-        // the app on. For desktop platforms, the controls will be smaller and
-        // closer together (more dense) than on mobile platforms.
-        visualDensity: VisualDensity.adaptivePlatformDensity,
 
-      ),
+      title: 'SGS Upload Test',
+      // theme: ThemeData(
+      //   // This is the theme of your application.
+      //   //
+      //   // Try running your application with "flutter run". You'll see the
+      //   // application has a blue toolbar. Then, without quitting the app, try
+      //   // changing the primarySwatch below to Colors.green and then invoke
+      //   // "hot reload" (press "r" in the console where you ran "flutter run",
+      //   // or simply save your changes to "hot reload" in a Flutter IDE).
+      //   // Notice that the counter didn't reset back to zero; the application
+      //   // is not restarted.
+      //   primarySwatch: Colors.blue,
+      //   // This makes the visual density adapt to the platform that you run
+      //   // the app on. For desktop platforms, the controls will be smaller and
+      //   // closer together (more dense) than on mobile platforms.
+      //   visualDensity: VisualDensity.adaptivePlatformDensity,
+      //
+      // ),
       home: MyHomePage(title: 'SGS Upload Test'),
 
     );
@@ -59,6 +63,7 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
   File mPhoto;
   List<Asset> imageList = List<Asset>();
   final deptTextBox = TextEditingController();
+  String fileName;
 
   @override
   Widget build(BuildContext context) {
@@ -90,6 +95,10 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
           //   onPressed: () => onPhoto(ImageSource.camera),
           //   // 사진 찍기
           // ),
+          FlatButton(
+              onPressed: () => scanBarcodeNormal(),
+              child: Image.asset('images/barcodeIcon.png',width: 100,height: 50)),
+          
           RaisedButton(
             child: Text('사진선택'),
             onPressed: imageList.length==0 ? () { getImage(); } : null
@@ -183,6 +192,32 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
         });
       }
     }
+  Future<void> scanBarcodeNormal() async {
+
+    String barcodeScanRes;
+
+    // Platform messages may fail, so we use a try/catch PlatformException.
+
+      try {
+        barcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
+            "#ff6666", "Cancel", true, ScanMode.BARCODE);
+        print(barcodeScanRes);
+      } on PlatformException {
+        barcodeScanRes = 'Failed to get platform version.';
+      }
+
+
+    // If the widget was removed from the tree while the asynchronous platform
+    // message was in flight, we want to discard the reply rather than calling
+    // setState to update our non-existent appearance.
+    if (!mounted) return;
+
+    setState(() {
+      fileName = barcodeScanRes;
+    });
+  }
+
+
 }
 
 
@@ -223,11 +258,8 @@ class _MyHomePageState extends State<MyHomePage> {
     // fast, so that you can just rebuild anything that needs updating rather
     // than having to individually change instances of widgets.
     return Scaffold(
-      appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
+      //title bar!!
+      appBar: null,
       body: ImageAndCamera(),
       // body: Center(
       //   // Center is a layout widget. It takes a single child and positions it
