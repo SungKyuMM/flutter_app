@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -12,9 +13,9 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 void main() {
-  WidgetsFlutterBinding.ensureInitialized();   SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft]).then((_) {
+ // WidgetsFlutterBinding.ensureInitialized();   SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft]).then((_) {
     runApp(MyApp());
-  });
+ // });
 }
 
 class MyApp extends StatelessWidget {
@@ -64,51 +65,80 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
   List<Asset> imageList = List<Asset>();
   final deptTextBox = TextEditingController();
   String fileName;
+  String deptName = 'Gunpo' ;
 
   @override
   Widget build(BuildContext context) {
    // Widget photo = (mPhoto != null) ? Image.file(mPhoto) : Text('EMPTY');
-
-
-    return Container( child: Column( children: <Widget>[
-      // 버튼을 제외한 영역의 가운데 출력
-      Expanded(
-        // child: Center(child: photo),
-        child:Center(
-          child: TextField( decoration: InputDecoration(
-            border: OutlineInputBorder(),
-            labelText: "사용자(폴더)",
-          ),
-            controller: deptTextBox,
-          ),
-        )
-      ),
-      Row(
+    return Container(
+      child: Column(
         children: <Widget>[
-          // RaisedButton(
-          //   child: Text('앨범'),
-          //   onPressed: () => onPhoto(ImageSource.gallery),
-          //   // 앨범에서 선택
-          // ),
-          // RaisedButton(
-          //   child: Text('카메라'),
-          //   onPressed: () => onPhoto(ImageSource.camera),
-          //   // 사진 찍기
-          // ),
-          FlatButton(
-              onPressed: () => scanBarcodeNormal(),
-              child: Image.asset('images/barcodeIcon.png',width: 100,height: 50)),
-          
-          RaisedButton(
-            child: Text('사진선택'),
-            onPressed: imageList.length==0 ? () { getImage(); } : null
+        // 버튼을 제외한 영역의 가운데 출력
+          Expanded(
+              // margin: const EdgeInsets.fromLTRB(5, 60, 5, 5),
+           //    padding: new EdgeInsets.all(5),
+           // // color: Colors.black,
+            child:Center(
+              child: TextField( decoration: InputDecoration(
+                border: OutlineInputBorder(),
+                labelText: "파일이름",
+              ),
+                controller: deptTextBox,
+              ),
+            ),
+         //   margin: const EdgeInsets.only(top:60),
           ),
-        ],
-        mainAxisAlignment: MainAxisAlignment.center,
-        ),
+          Expanded(
+            //alignment: Alignment.center,
+            child:Center(
+              child: mPhoto ==null ? null : Image.asset(mPhoto.path),
+            )
+          ),
+          Row(
+            children: <Widget>[
+              // RaisedButton(
+              //   child: Text('앨범'),
+              //   onPressed: () => onPhoto(ImageSource.gallery),
+              //   // 앨범에서 선택
+              // ),
+
+              FlatButton(
+                  onPressed: () => scanBarcodeNormal(),
+                  child: Image.asset('images/barcodeIcon.png',width: 100,height: 50),
+                          padding:new EdgeInsets.all(5) ,
+              ),
+              FlatButton(
+                // onTap: () => onPhoto(ImageSource.camera),
+                // child : Icon(Icons.camera_alt,size: 60.0),
+                 padding:  EdgeInsets.all(0),
+                child: Icon(Icons.camera_alt,size: 60.0),
+                 onPressed: () => onPhoto(ImageSource.camera),
+
+                 // 사진 찍기
+               ),
+              // IconButton(
+              //     icon: Icon(Icons.cloud_upload_outlined, size: 60.0,color: mPhoto == null ? Colors.grey : Colors.black),
+              //     padding: EdgeInsets.fromLTRB(0, 0, 50, 10),
+              //     onPressed: mPhoto != null ? null : () {uploadButton();}
+              // ),
+              FlatButton(
+                  child: Icon(Icons.cloud_upload_outlined, size: 60.0,color: mPhoto == null ? Colors.grey : Colors.black),
+               //   padding: EdgeInsets.fromLTRB(0, 0, 50, 10),
+                  onPressed: mPhoto == null ? null : () {uploadButton();}
+              ),
+
+
+              RaisedButton(
+                child: Text('사진선택'),
+                onPressed: imageList.length==0 ? () { getImage(); } : null
+              ),
+            ],
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            ),
     ],
     // 화면 하단에 배치
-      mainAxisAlignment: MainAxisAlignment.end,
+      mainAxisAlignment: MainAxisAlignment.center,
         ),
     );
     }
@@ -120,76 +150,85 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
         File f = await ImagePicker.pickImage(source: source);
         if(f != null) {
           setState(() => mPhoto = f);
-          var request = http.MultipartRequest('POST',
-              Uri.parse("http://food-back.kr.sgs.com/board/receivephoto"));
-          request.files.add(
-              await http.MultipartFile.fromPath(
-                'file',
-                f.path,
-              )
-          );
-          //request.fields['fileKey']= "file";
-          request.fields['fileName'] = "TEST/Tqwer.jpg";
-          request.fields['dept'] = "TEST/T";
+          // var request = http.MultipartRequest('POST',
+          //     Uri.parse("http://food-back.kr.sgs.com/board/receivephoto"));
+          // request.files.add(
+          //     await http.MultipartFile.fromPath(
+          //       'file',
+          //       f.path,
+          //     )
+          // );
+          // //request.fields['fileKey']= "file";
+          // request.fields['fileName'] = "TEST/Tqwer.jpg";
+          // request.fields['dept'] = "TEST/T";
 
-          var res = await request.send();
+         // var res = await request.send();
 
-          log(" ${res.statusCode} ");
-          log(" ${res.stream.bytesToString()} ");
+          // log(" ${res.statusCode} ");
+          // log(" ${res.stream.bytesToString()} ");
       }
     }
 
     void getImage() async{
 
       List<Asset> resultList = List<Asset>();
-      List<File> files = [];
-      resultList = await MultiImagePicker.pickImages(maxImages: 300, enableCamera: true);
+      try {
+        resultList = await MultiImagePicker.pickImages(maxImages: 300, enableCamera: true);
+      } catch (e)
+      {
+        log(e.toString());
+      }
+      if( resultList.length > 0)
+      {
       setState(() {
         imageList = resultList;
       });
-      String deptName = "Gunpo";
-      if(deptTextBox.text.trim().isNotEmpty)
-        deptName = deptName +"/"+ deptTextBox.text;
+
+      // if(deptTextBox.text.trim().isNotEmpty)
+      //   deptName = deptName +"/"+ deptTextBox.text;
       if(imageList.length > 0 ) {
-        var now = new DateTime.now();
-        String fileName1 = DateFormat('yyyy-MM-dd hh-mm-ss.').format(now);
+          var now = new DateTime.now();
+          String fileName1 = DateFormat('yyyy-MM-dd hh-mm-ss.').format(now);
 
-        int fileCount = 0;
-        for (Asset asset in imageList) {
-          fileCount = fileCount +1;
-          ByteData byteData = await asset.getByteData();
-          List<int> imageD = byteData.buffer.asUint8List();
-          var request = http.MultipartRequest('POST',
-              Uri.parse("http://food-back.kr.sgs.com/board/receivephoto"));
-          request.files.add(
-              await http.MultipartFile.fromBytes(
-                  'file', imageD, filename: fileName1+ fileCount.toString().padLeft(3,'0')+".png"  )
-          );
+          int fileCount = 0;
+          for (Asset asset in imageList) {
+            fileCount = fileCount + 1;
+            // ByteData byteData = await asset.getByteData();
+            // List<int> imageD = byteData.buffer.asUint8List();
+            // var request = http.MultipartRequest('POST',
+            //     Uri.parse("http://food-back.kr.sgs.com/board/receivephoto"));
+            // request.files.add(
+            //     await http.MultipartFile.fromBytes(
+            //         'file', imageD,
+            //         filename: fileName1 + fileCount.toString().padLeft(3, '0') +
+            //             ".png")
+            // );
+            // request.fields['dept'] = deptName;
+            // var res = await request.send();
+            String tempString = fileName1 + fileCount.toString().padLeft(3, '0') +".png";
+            int res = await uploadImg(asset, tempString);
 
-          request.fields['dept'] = deptName;
-          var res = await request.send();
-
-          if(res.statusCode==200)
-            {
-              Fluttertoast.showToast(msg: "전송완료 - "+ fileCount.toString()+"/"+imageList.length.toString(),
+            if (res == 200) {
+              Fluttertoast.showToast(msg: "전송완료 - " + fileCount.toString() + "/" +
+                  imageList.length.toString(),
                   backgroundColor: Colors.white,
                   textColor: Colors.black,
                   toastLength: Toast.LENGTH_SHORT,
                   gravity: ToastGravity.TOP);
             }
-          else
-            {
+            else {
               Fluttertoast.showToast(msg: "ERROR! 전송 실패",
                   backgroundColor: Colors.white,
                   textColor: Colors.black,
                   toastLength: Toast.LENGTH_SHORT,
                   gravity: ToastGravity.TOP);
             }
-          log(" ${res.statusCode} ");
-        }
-        setState(() {
-          imageList.clear();
-        });
+            log(" ${res} ");
+          }
+          setState(() {
+            imageList.clear();
+          });
+       }
       }
     }
   Future<void> scanBarcodeNormal() async {
@@ -216,6 +255,64 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
       fileName = barcodeScanRes;
     });
   }
+
+  void uploadButton() async
+  {
+      String tempFileName = "";
+      if(deptTextBox.text.trim().isEmpty)
+        tempFileName = DateFormat('yyyy-MM-dd hh-mm-ss.').format(new DateTime.now());
+      else
+        tempFileName = deptTextBox.text;
+
+      tempFileName = tempFileName + ".png";
+       var request = http.MultipartRequest('POST',
+           Uri.parse("http://food-back.kr.sgs.com/board/receivephoto"));
+       request.files.add(
+           await http.MultipartFile.fromPath(
+             'file',
+             mPhoto.path,
+             filename: tempFileName,
+           )
+       );
+      request.fields['dept'] = deptName;
+
+      var res = await request.send();
+
+      log(" ${res.statusCode} ");
+      log(" ${res.stream.bytesToString()} ");
+
+      if (res.statusCode == 200) {
+        Fluttertoast.showToast(msg: "전송완료 - " ,
+            backgroundColor: Colors.white,
+            textColor: Colors.black,
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.TOP);
+      }
+      else {
+        Fluttertoast.showToast(msg: "ERROR! 전송 실패",
+            backgroundColor: Colors.white,
+            textColor: Colors.black,
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.TOP);
+      }
+  }
+
+  Future<int> uploadImg (var asset, String fileName) async
+  {
+    ByteData byteData = await asset.getByteData();
+    List<int> imageD = byteData.buffer.asUint8List();
+    var request = http.MultipartRequest('POST',
+        Uri.parse("http://food-back.kr.sgs.com/board/receivephoto"));
+    request.files.add(
+        await http.MultipartFile.fromBytes(
+        'file', imageD,
+        filename: fileName)
+    );
+    request.fields['dept'] = deptName;
+    var res = await request.send();
+    return res.statusCode;
+  }
+
 
 
 }
@@ -259,7 +356,7 @@ class _MyHomePageState extends State<MyHomePage> {
     // than having to individually change instances of widgets.
     return Scaffold(
       //title bar!!
-      appBar: null,
+    //  appBar: null,
       body: ImageAndCamera(),
       // body: Center(
       //   // Center is a layout widget. It takes a single child and positions it
