@@ -7,11 +7,12 @@ import 'package:http/http.dart' as http;
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:multi_image_picker/multi_image_picker.dart';
-import 'package:flutter_absolute_path/flutter_absolute_path.dart';
+import 'dart:convert';
 import 'dart:developer';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
+import 'package:path/path.dart';
 void main() {
  // WidgetsFlutterBinding.ensureInitialized();   SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft]).then((_) {
     runApp(MyApp());
@@ -51,9 +52,7 @@ class MyApp extends StatelessWidget {
 
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-class Post{
-  var filename;
-}
+
 class ImageAndCamera extends StatefulWidget {
   @override
   ImageAndCameraState createState() => ImageAndCameraState();
@@ -66,12 +65,32 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
   final deptTextBox = TextEditingController();
   String fileName;
   String deptName = 'Gunpo' ;
+  Map<String, dynamic> setting;
+  //var my_setting;
 
+
+  @override
+  void initState(){
+    super.initState();
+
+    // final my_setting1 = loadAsset();
+    // my_setting1.then((value) => my_setting = value );
+    // String news = await
+    loadAsset();
+  }
+
+  void loadAsset() async {
+    var my_setting = jsonDecode(await rootBundle.loadString('images/run.json'));
+    setting = my_setting;
+  }
+
+  
   @override
   Widget build(BuildContext context) {
    // Widget photo = (mPhoto != null) ? Image.file(mPhoto) : Text('EMPTY');
     return Container(
       child: Column(
+
         children: <Widget>[
         // 버튼을 제외한 영역의 가운데 출력
           Expanded(
@@ -132,10 +151,22 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
                 child: Text('사진선택'),
                 onPressed: imageList.length==0 ? () { getImage(); } : null
               ),
+
             ],
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             crossAxisAlignment: CrossAxisAlignment.center,
             ),
+          Row(
+              children: <Widget>[
+                RaisedButton(
+                    child: Text('setting'),
+                    onPressed: (){
+                      Navigator.push(context,
+                      MaterialPageRoute(builder: (context) => SettingPage(setting) ));
+                    },
+                ),
+                ]
+          )
     ],
     // 화면 하단에 배치
       mainAxisAlignment: MainAxisAlignment.center,
@@ -143,6 +174,10 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
     );
     }
 
+    void settg(){
+      print(' ${setting['dept']} ');
+
+    }
   // 앨범과 카메라 양쪽에서 호출.ImageSource.gallery와 ImageSource.camera 두 가지밖에 없다.
     void onPhoto(ImageSource source) async {
     // await 키워드 때문에 setState 안에서 호출할 수 없다.
@@ -274,7 +309,7 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
              filename: tempFileName,
            )
        );
-      request.fields['dept'] = deptName;
+      request.fields['dept'] = setting['dept'];
 
       var res = await request.send();
 
@@ -308,7 +343,7 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
         'file', imageD,
         filename: fileName)
     );
-    request.fields['dept'] = deptName;
+    request.fields['dept'] = setting['dept'];
     var res = await request.send();
     return res.statusCode;
   }
@@ -343,9 +378,6 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-
-
-
   @override
   Widget build(BuildContext context) {
     // This method is rerun every time setState is called, for instance as done
@@ -394,5 +426,194 @@ class _MyHomePageState extends State<MyHomePage> {
       // ),
       // This trailing comma makes auto-formatting nicer for build methods.
     );
+  }
+}
+
+class SettingPage extends StatefulWidget{
+  Map<String, dynamic> setting;
+  int _select;
+ // SettingPage({Key key, 'asd'}) : super(key: key);
+  SettingPage(Map<String, dynamic> setting){
+    this.setting = setting;
+  }
+  @override
+  SettingPageState createState() => SettingPageState(setting);
+}
+
+
+
+
+class SettingPageState extends State<SettingPage>{
+  Map<String, dynamic> setting;
+  String deptTemp;
+  int _selected;
+
+  //List<dynamic> temp ;
+
+
+  SettingPageState(Map<String, dynamic> setting){
+    this.setting = setting;
+    deptTemp = setting['dept'];
+   // _selected = deptName.indexOf(this.setting['dept']);
+    // temp.add(setting);
+    // temp.add(deptName);
+  }
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Setting'),
+      ),
+      body: ListView(
+        children: ListTile.divideTiles(
+          context: context,
+            tiles: [
+              ListTile(
+                leading: Icon(Icons.device_unknown),
+                title: Text('부서'),
+                subtitle: Text(setting['dept']),
+
+                onTap: (){
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    child: new AlertDialog(
+
+                      title: Text('부서'),
+                      actions: [
+                        FlatButton(
+                            onPressed: (){
+                              setState(() {
+                                deptTemp = setting['dept'];
+                                Navigator.pop(context);
+                              });
+                            },
+                            child: Text('OK')
+
+                        ),
+                        FlatButton(
+                            onPressed: (){
+                              setState(() {
+                                setting['dept'] = deptTemp;
+                                Navigator.pop(context);
+                              });
+                            },
+                            child: Text('CANCLE'),
+                        )
+                      ],
+                      content: SingleChildScrollView(
+
+                        child: new Material(
+                          child: new MyDialogContent(countries: setting ),
+                        )
+                      )
+                    )
+                  );
+                },
+              ),
+
+              ListTile(
+                leading: Icon(Icons.person_rounded),
+                title: Text('사용자'),
+                subtitle: Text(setting['User']),
+
+
+              ),
+
+              ListTile(
+                leading: Icon(Icons.collections_outlined),
+                title: Text('사진 해상도'),
+                subtitle: Text(setting['width']),
+                onTap: (){
+                  showDialog(
+                      context: context,
+                      child: AlertDialog(
+                        title: Text('해상도'),
+                        content: Row(
+                          children: <Widget>[
+                            Expanded(
+                              flex: 1,
+                              child: TextField(
+
+                              ),
+                            ),
+                            Expanded(
+                              flex: 1,
+                              child: Text(' * '),
+                            ),
+                            Expanded(
+                              flex: 1,
+                              child: TextField(
+
+                            ),
+
+                            )
+                          ],
+                        )
+                      )
+                  );
+                }
+              ),
+            ]
+        ).toList(),
+      )
+    );
+  }
+
+}
+
+
+class MyDialogContent extends StatefulWidget {
+  MyDialogContent({
+    Key key,
+    this.countries,
+  }): super(key: key);
+
+  Map<String, dynamic> countries;
+  List<String> deptName = ['E&E','FOOD','Other'];
+  @override
+  _MyDialogContentState createState() => new _MyDialogContentState();
+
+  // String ReturnDept(){
+  //   return countries;
+  // }
+}
+class _MyDialogContentState extends State<MyDialogContent> {
+  int _selectedIndex;
+
+  @override
+  void initState(){
+    super.initState();
+    _selectedIndex = widget.deptName.indexOf(widget.countries['dept']);
+  }
+
+  _getContent(){
+    if (widget.deptName.length == 0){
+      return new Container();
+    }
+
+    return new Column(
+        children: new List<RadioListTile<int>>.generate(
+            widget.deptName.length,
+                (int index){
+              return new RadioListTile<int>(
+                value: index,
+                groupValue: _selectedIndex,
+                title: new Text(widget.deptName[index]),
+                onChanged: (int value) {
+                  setState((){
+                    _selectedIndex = value;
+                    widget.countries['dept']  = widget.deptName[index];
+                  });
+                },
+              );
+            }
+        )
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _getContent();
   }
 }
