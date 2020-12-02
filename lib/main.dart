@@ -4,7 +4,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
-import 'dart:io';
+import 'dart:io' ;
+import 'package:image/image.dart' as ImgCtl;
 import 'package:image_picker/image_picker.dart';
 import 'package:multi_image_picker/multi_image_picker.dart';
 import 'dart:convert';
@@ -185,9 +186,12 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
     void onPhoto(ImageSource source) async {
     // await 키워드 때문에 setState 안에서 호출할 수 없다.
       // pickImage 함수 외에 pickVideo 함수가 더 있다.
-        File f = await ImagePicker.pickImage(source: source);
+        File f = await ImagePicker.pickImage(source: source,maxHeight: 900, maxWidth: 1200);
+        //File f = await ImagePicker.pickImage(source: source);
         if(f != null) {
-          setState(() => mPhoto = f);
+
+          setState(() => mPhoto = f
+          );
           // var request = http.MultipartRequest('POST',
           //     Uri.parse("http://food-back.kr.sgs.com/board/receivephoto"));
           // request.files.add(
@@ -231,20 +235,8 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
           int fileCount = 0;
           for (Asset asset in imageList) {
             fileCount = fileCount + 1;
-            // ByteData byteData = await asset.getByteData();
-            // List<int> imageD = byteData.buffer.asUint8List();
-            // var request = http.MultipartRequest('POST',
-            //     Uri.parse("http://food-back.kr.sgs.com/board/receivephoto"));
-            // request.files.add(
-            //     await http.MultipartFile.fromBytes(
-            //         'file', imageD,
-            //         filename: fileName1 + fileCount.toString().padLeft(3, '0') +
-            //             ".png")
-            // );
-            // request.fields['dept'] = deptName;
-            // var res = await request.send();
-            String tempString = fileName1 + fileCount.toString().padLeft(3, '0') +".png";
-          // log(setting['User'].toString());
+            String tempString = fileName1 + fileCount.toString().padLeft(3, '0') +".JPG";
+
 
             int res = await uploadImg(asset, tempString);
 
@@ -304,7 +296,7 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
       else
         tempFileName = deptTextBox.text;
 
-      tempFileName = tempFileName + ".png";
+      tempFileName = tempFileName + ".JPG";
        var request = http.MultipartRequest('POST',
            Uri.parse("http://food-back.kr.sgs.com/board/receivephoto"));
        request.files.add(
@@ -357,6 +349,11 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
     return res.statusCode;
   }
 
+  void reSizeImg(String fPath){
+    ImgCtl.Image image = ImgCtl.decodeImage(File(fPath).readAsBytesSync());
+
+
+  }
 
 
 }
@@ -462,6 +459,11 @@ class SettingPageState extends State<SettingPage>{
   SettingPageState(Map<String, dynamic> setting){
     this.setting = setting;
     deptTemp = setting['dept'];
+  }
+  @override
+  void dispose() {
+    FileName.dispose();
+    super.dispose();
   }
 
 
