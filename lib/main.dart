@@ -64,7 +64,7 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
   List<Asset> imageList = List<Asset>();
   final deptTextBox = TextEditingController();
   String fileName;
-  String deptName = 'Gunpo' ;
+  String deptName  ;
   Map<String, dynamic> setting;
   //var my_setting;
 
@@ -82,6 +82,8 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
   void loadAsset() async {
     var my_setting = jsonDecode(await rootBundle.loadString('images/run.json'));
     setting = my_setting;
+    if(setting['FileName'].toString().isNotEmpty)
+      deptTextBox.text = setting['FileName'].toString();
   }
 
   
@@ -100,8 +102,9 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
             child:Center(
               child: TextField( decoration: InputDecoration(
                 border: OutlineInputBorder(),
-                labelText: "파일이름",
-              ),
+                labelText:  'FileName',
+                ),
+
                 controller: deptTextBox,
               ),
             ),
@@ -241,6 +244,8 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
             // request.fields['dept'] = deptName;
             // var res = await request.send();
             String tempString = fileName1 + fileCount.toString().padLeft(3, '0') +".png";
+          // log(setting['User'].toString());
+
             int res = await uploadImg(asset, tempString);
 
             if (res == 200) {
@@ -310,6 +315,8 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
            )
        );
       request.fields['dept'] = setting['dept'];
+      if(setting['User'].toString().isNotEmpty)
+        request.fields['dept'] =  setting['dept'] + '/' + setting['User'];
 
       var res = await request.send();
 
@@ -344,6 +351,8 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
         filename: fileName)
     );
     request.fields['dept'] = setting['dept'];
+    if(setting['User'].toString().isNotEmpty)
+      request.fields['dept'] =  setting['dept'] + '/' + setting['User'] ;
     var res = await request.send();
     return res.statusCode;
   }
@@ -447,17 +456,15 @@ class SettingPageState extends State<SettingPage>{
   Map<String, dynamic> setting;
   String deptTemp;
   int _selected;
+  final FileName = TextEditingController();
 
   //List<dynamic> temp ;
-
-
   SettingPageState(Map<String, dynamic> setting){
     this.setting = setting;
     deptTemp = setting['dept'];
-   // _selected = deptName.indexOf(this.setting['dept']);
-    // temp.add(setting);
-    // temp.add(deptName);
   }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -516,8 +523,52 @@ class SettingPageState extends State<SettingPage>{
                 leading: Icon(Icons.person_rounded),
                 title: Text('사용자'),
                 subtitle: Text(setting['User']),
+                onTap: (){
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                  );
 
+                }
+              ),
+              ListTile(
+                leading: Icon(Icons.device_unknown),
+                title: Text('파일 기본 값'),
+                subtitle: Text(setting['FileName']),
+                onTap: (){
+                  showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      child: new AlertDialog(
+                          title: Text('파일 이름'),
+                          actions: [
+                            FlatButton(
+                                onPressed: (){
+                                  setState(() {
+                                    setting['FileName'] = FileName.text = FileName.text.trim();
+                                    Navigator.pop(context);
+                                  });
+                                },
+                                child: Text('OK')
 
+                            ),
+                            FlatButton(
+                              onPressed: (){
+                                setState(() {
+                                  Navigator.pop(context);
+                                });
+                              },
+                              child: Text('CANCLE'),
+                            )
+                          ],
+                          content: TextField( decoration: InputDecoration(
+                        //    border: OutlineInputBorder(),
+                          ),
+                            controller: FileName,
+                          ),
+                      )
+                  );
+                },
               ),
 
               ListTile(
