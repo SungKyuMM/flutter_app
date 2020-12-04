@@ -1,5 +1,5 @@
 import 'dart:convert';
-
+import 'package:path_provider/path_provider.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -14,6 +14,9 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 import 'package:path/path.dart';
+//import 'package:camera/camera.dart';
+
+
 void main() {
  // WidgetsFlutterBinding.ensureInitialized();   SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft]).then((_) {
     runApp(MyApp());
@@ -53,19 +56,31 @@ class MyApp extends StatelessWidget {
 
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//Camera ADd!
+// IconData getCameraLensIcon(CameraLensDirection direction) {
+//   switch (direction) {
+//     case CameraLensDirection.back:
+//       return Icons.camera_rear;
+//     case CameraLensDirection.front:
+//       return Icons.camera_front;
+//     case CameraLensDirection.external:
+//       return Icons.camera;
+//   }
+//   throw ArgumentError('Unknown lens direction');
+// }
 
+//
 class ImageAndCamera extends StatefulWidget {
   @override
   ImageAndCameraState createState() => ImageAndCameraState();
 }
-
-
 class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문자열은 카메라에서는 에러 발생했다. image_picker 모듈에서 File 객체 반환.
   File mPhoto;
   List<Asset> imageList = List<Asset>();
   final deptTextBox = TextEditingController();
   String fileName;
   String deptName  ;
+  String preFileName = '';
   Map<String, dynamic> setting;
   //var my_setting;
 
@@ -81,8 +96,14 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
   }
 
   void loadAsset() async {
-    var my_setting = jsonDecode(await rootBundle.loadString('images/run.json'));
-    setting = my_setting;
+
+    final directory = (await getApplicationDocumentsDirectory()).path;
+    if(await File('$directory/images/run.json').exists())
+      setting = jsonDecode(await File('$directory/images/run.json').readAsString());
+    else{
+      var my_setting = jsonDecode(await rootBundle.loadString('images/run.json'));
+      setting = my_setting;
+    }
     if(setting['FileName'].toString().isNotEmpty)
       deptTextBox.text = setting['FileName'].toString();
   }
@@ -97,9 +118,15 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
         children: <Widget>[
         // 버튼을 제외한 영역의 가운데 출력
           Expanded(
+              child:Center(
+                child: Text(preFileName,)
+              )
+          ),
+          Expanded(
               // margin: const EdgeInsets.fromLTRB(5, 60, 5, 5),
            //    padding: new EdgeInsets.all(5),
-           // // color: Colors.black,
+            // color: Colors.black,
+
             child:Center(
               child: TextField( decoration: InputDecoration(
                 border: OutlineInputBorder(),
@@ -169,6 +196,8 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
                       MaterialPageRoute(builder: (context) => SettingPage(setting) ));
                     },
                 ),
+
+
                 ]
           )
     ],
@@ -178,16 +207,13 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
     );
     }
 
-    void settg(){
-      print(' ${setting['dept']} ');
 
-    }
   // 앨범과 카메라 양쪽에서 호출.ImageSource.gallery와 ImageSource.camera 두 가지밖에 없다.
     void onPhoto(ImageSource source) async {
     // await 키워드 때문에 setState 안에서 호출할 수 없다.
       // pickImage 함수 외에 pickVideo 함수가 더 있다.
-        File f = await ImagePicker.pickImage(source: source,maxHeight: 900, maxWidth: 1200);
-        //File f = await ImagePicker.pickImage(source: source);
+      //  File f = await ImagePicker.pickImage(source: source,imageQuality: 80);
+        File f = await ImagePicker.pickImage(source: source);
         if(f != null) {
 
           setState(() => mPhoto = f
@@ -215,7 +241,18 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
 
       List<Asset> resultList = List<Asset>();
       try {
-        resultList = await MultiImagePicker.pickImages(maxImages: 300, enableCamera: true);
+        resultList = await MultiImagePicker.pickImages(
+            maxImages: 300,
+            enableCamera: true,
+            selectedAssets: imageList,
+            cupertinoOptions: CupertinoOptions(takePhotoIcon: "chat"),
+            materialOptions: MaterialOptions(
+              actionBarColor: "#abcdef",
+              actionBarTitle: "SELECT",
+              allViewTitle: "All Photos",
+              useDetailsView: false,
+              selectCircleStrokeColor: "#000000", ),
+        );
       } catch (e)
       {
         log(e.toString());
@@ -264,11 +301,8 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
       }
     }
   Future<void> scanBarcodeNormal() async {
-
     String barcodeScanRes;
-
     // Platform messages may fail, so we use a try/catch PlatformException.
-
       try {
         barcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
             "#ff6666", "Cancel", true, ScanMode.BARCODE);
@@ -284,6 +318,7 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
     if (!mounted) return;
 
     setState(() {
+      deptTextBox.text = barcodeScanRes;
       fileName = barcodeScanRes;
     });
   }
@@ -297,6 +332,10 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
         tempFileName = deptTextBox.text;
 
       tempFileName = tempFileName + ".JPG";
+
+      if(setting['width'] != 0)
+        await reSizeImg(mPhoto.path);
+
        var request = http.MultipartRequest('POST',
            Uri.parse("http://food-back.kr.sgs.com/board/receivephoto"));
        request.files.add(
@@ -321,6 +360,7 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
             textColor: Colors.black,
             toastLength: Toast.LENGTH_SHORT,
             gravity: ToastGravity.TOP);
+        preFileName = deptTextBox.text + ' 전송';
       }
       else {
         Fluttertoast.showToast(msg: "ERROR! 전송 실패",
@@ -328,7 +368,11 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
             textColor: Colors.black,
             toastLength: Toast.LENGTH_SHORT,
             gravity: ToastGravity.TOP);
+        preFileName = deptTextBox.text + ' 오류';
       }
+      setState(() {
+
+      });
   }
 
   Future<int> uploadImg (var asset, String fileName) async
@@ -349,10 +393,10 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
     return res.statusCode;
   }
 
-  void reSizeImg(String fPath){
-    ImgCtl.Image image = ImgCtl.decodeImage(File(fPath).readAsBytesSync());
-
-
+  void reSizeImg(String fPath) async{
+    ImgCtl.Image img = ImgCtl.decodeImage(File(fPath).readAsBytesSync());
+    ImgCtl.Image tempImg = ImgCtl.copyResize(img,  width: setting['width'] ,height: setting['height'] );
+    new File(fPath).writeAsBytesSync(ImgCtl.encodeJpg(tempImg,quality: 80));
   }
 
 
@@ -454,19 +498,54 @@ class SettingPageState extends State<SettingPage>{
   String deptTemp;
   int _selected;
   final FileName = TextEditingController();
+  final UserName = TextEditingController();
+  final imgWidth = TextEditingController();
+  final imgHeight = TextEditingController();
 
   //List<dynamic> temp ;
   SettingPageState(Map<String, dynamic> setting){
     this.setting = setting;
     deptTemp = setting['dept'];
+    FileName.text = setting['FileName'];
+    UserName.text = setting['User'];
+    imgWidth.text = setting['width'] == 0 ? '0' : setting['width'].toString();
+    imgHeight.text = setting['height'] == 0 ? '0' : setting['height'].toString();
   }
   @override
   void dispose() {
     FileName.dispose();
+    UserName.dispose();
+    imgWidth.dispose();
+    imgHeight.dispose();
     super.dispose();
   }
 
+  @override
+  void setState(fn) {
+    super.setState(fn);
+    // if(setting != null)
+       jsonWriteFile();
+  }
 
+  void jsonWriteFile() async{
+
+    // final directory = (await getApplicationDocumentsDirectory()).path;
+    // await File('$directory/images/run.json').writeAsString(jsonEncode(setting));
+    log('???');
+    final _filePath = await _localFile;
+    _filePath.writeAsString(jsonEncode(setting));
+    log('???123');
+
+  }
+  Future<String> get _localPath async {
+    final directory = await getApplicationDocumentsDirectory();
+    return directory.path;
+  }
+
+  Future<File> get _localFile async {
+    final path = await _localPath;
+    return File('$path/images');
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -494,6 +573,7 @@ class SettingPageState extends State<SettingPage>{
                             onPressed: (){
                               setState(() {
                                 deptTemp = setting['dept'];
+
                                 Navigator.pop(context);
                               });
                             },
@@ -525,10 +605,42 @@ class SettingPageState extends State<SettingPage>{
                 leading: Icon(Icons.person_rounded),
                 title: Text('사용자'),
                 subtitle: Text(setting['User']),
+
                 onTap: (){
                   showDialog(
-                    context: context,
-                    barrierDismissible: false,
+                      context: context,
+                      barrierDismissible: false,
+                      child: new AlertDialog(
+                        title: Text('유저(세부폴더)'),
+
+                        actions: [
+                          FlatButton(
+                              onPressed: (){
+                                setState(() {
+                                  setting['User'] = UserName.text = UserName.text.trim();
+
+                                  //setting['User'] = int.parse(UserName.text);
+                                  Navigator.pop(context);
+                                });
+                              },
+                              child: Text('OK')
+
+                          ),
+                          FlatButton(
+                            onPressed: (){
+                              setState(() {
+                                Navigator.pop(context);
+                              });
+                            },
+                            child: Text('CANCLE'),
+                          )
+                        ],
+                        content: TextField( decoration: InputDecoration(
+                          //    border: OutlineInputBorder(),
+                        ),
+                          controller: UserName,
+                        ),
+                      )
                   );
 
                 }
@@ -575,29 +687,57 @@ class SettingPageState extends State<SettingPage>{
 
               ListTile(
                 leading: Icon(Icons.collections_outlined),
-                title: Text('사진 해상도'),
-                subtitle: Text(setting['width']),
+                title: Text('사진 해상도 '),
+                subtitle: Text(
+                    setting['width'] == 0 ? '사용안함' : setting['width'].toString() + ' * ' + setting['height'].toString()
+                ),
                 onTap: (){
                   showDialog(
                       context: context,
                       child: AlertDialog(
-                        title: Text('해상도'),
+                        title: Text('해상도 (0 입력시 사용 안함)'),
+                          actions: [
+                            FlatButton(
+                                onPressed: (){
+                                  setState(() {
+                                    imgWidth.text = imgWidth.text.trim();
+                                    if(imgWidth.text == '0')
+                                      imgHeight.text = '0';
+                                    else
+                                      imgHeight.text = imgHeight.text.trim();
+                                    setting['width'] = int.parse(imgWidth.text);
+                                    setting['height'] = int.parse(imgHeight.text);
+                                    Navigator.pop(context);
+                                  });
+                                },
+                                child: Text('OK')
+
+                            ),
+                            FlatButton(
+                              onPressed: (){
+                                setState(() {
+                                  Navigator.pop(context);
+                                });
+                              },
+                              child: Text('CANCLE'),
+                            )
+                          ],
                         content: Row(
                           children: <Widget>[
                             Expanded(
                               flex: 1,
                               child: TextField(
-
+                                controller:  imgWidth,
                               ),
                             ),
                             Expanded(
                               flex: 1,
-                              child: Text(' * '),
+                              child: Text('     * '),
                             ),
                             Expanded(
                               flex: 1,
                               child: TextField(
-
+                                controller: imgHeight  ,
                             ),
 
                             )
@@ -613,6 +753,7 @@ class SettingPageState extends State<SettingPage>{
     );
   }
 
+
 }
 
 
@@ -623,7 +764,7 @@ class MyDialogContent extends StatefulWidget {
   }): super(key: key);
 
   Map<String, dynamic> countries;
-  List<String> deptName = ['E&E','FOOD','Other'];
+  List<String> deptName = ['E&E','FOOD', 'FOOD Lab','Hard Line','Soft Line', 'Physical Lab','Kimhae' ,'Gunpo' ,'Other'];
   @override
   _MyDialogContentState createState() => new _MyDialogContentState();
 

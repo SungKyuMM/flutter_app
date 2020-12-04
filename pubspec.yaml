@@ -36,6 +36,8 @@ dependencies:
   fluttertoast : ^7.1.1
   flutter_barcode_scanner: ^1.0.1
   image: ^2.1.19
+  path_provider:
+  camera:
 
   intl:
 dev_dependencies:
