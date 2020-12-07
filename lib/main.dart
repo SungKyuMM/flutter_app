@@ -14,12 +14,12 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 import 'package:path/path.dart';
-//import 'package:camera/camera.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 void main() async{
- // WidgetsFlutterBinding.ensureInitialized();   SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft]).then((_) {
+  WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setEnabledSystemUIOverlays([]);
     await Hive.initFlutter();
     await Hive.openBox('config');
     runApp(MyApp());
@@ -32,7 +32,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
 
-      title: 'SGS Upload Test',
+      title: 'SGS Upload',
       // theme: ThemeData(
       //   // This is the theme of your application.
       //   //
@@ -50,7 +50,8 @@ class MyApp extends StatelessWidget {
       //   visualDensity: VisualDensity.adaptivePlatformDensity,
       //
       // ),
-      home: MyHomePage(title: 'SGS Upload Test'),
+      home: MyHomePage(title: 'SGS Upload'),
+      debugShowCheckedModeBanner: false,
 
     );
   }
@@ -78,6 +79,7 @@ class ImageAndCamera extends StatefulWidget {
   ImageAndCameraState createState() => ImageAndCameraState();
 }
 class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문자열은 카메라에서는 에러 발생했다. image_picker 모듈에서 File 객체 반환.
+
   File mPhoto;
   List<Asset> imageList = List<Asset>();
   final deptTextBox = TextEditingController();
@@ -126,7 +128,7 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
       child: Column(
         children: <Widget>[
         // 버튼을 제외한 영역의 가운데 출력
-          Expanded(
+          Container(
               child:Column(
                 children: <Widget>[
                   Row(
@@ -165,6 +167,9 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
                             //   padding: EdgeInsets.fromLTRB(0, 0, 50, 10),
                             onPressed: (){
                               deptTextBox.text = setting['FileName'];
+                              setState(() {
+                                fCount = 0;
+                              });
                             }
                         ),
                       ),
@@ -193,22 +198,6 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
 
               )
           ),
-
-         //  Expanded(
-         //      // margin: const EdgeInsets.fromLTRB(5, 60, 5, 5),
-         //   //    padding: new EdgeInsets.all(5),
-         //    // color: Colors.black,
-         //    child:Center(
-         //      child: TextField( decoration: InputDecoration(
-         //        border: OutlineInputBorder(),
-         //        labelText:  'FileName',
-         //        ),
-         //
-         //        controller: deptTextBox,
-         //      ),
-         //    ),
-         // //   margin: const EdgeInsets.only(top:60),
-         //  ),
           Expanded(
             //alignment: Alignment.center,
             child:Center(
@@ -247,19 +236,19 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
               ),
 
               Flexible(
-                child:RaisedButton(
-                  child: Text('사진선택'),
+                child:FlatButton(
+                    child: Icon(Icons.filter, size: 60,),
                   onPressed: imageList.length==0 ? () { getImage(); } : null
               ),
               ),
             ],
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
+            //crossAxisAlignment: CrossAxisAlignment.center,
             ),
 
     ],
     // 화면 하단에 배치
-      mainAxisAlignment: MainAxisAlignment.center,
+     // mainAxisAlignment: MainAxisAlignment.center,
 
       ),
       //////////
@@ -273,13 +262,13 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
     // await 키워드 때문에 setState 안에서 호출할 수 없다.
       // pickImage 함수 외에 pickVideo 함수가 더 있다.
       //  File f = await ImagePicker.pickImage(source: source,imageQuality: 80);
-      File f = await ImagePicker.pickImage(source: source);
+      File f;
 
-      // if(setting['width'] != 0 && setting['height'] != 0)
-      //   //f = await ImagePicker.pickImage(source: source);
-      //   f = await ImagePicker.pickImage(source: source,maxWidth: setting['width'],  maxHeight: setting['height']);
-      // else
-      //   f = await ImagePicker.pickImage(source: source);
+      if(setting['width'] != 0 && setting['height'] != 0)
+        //f = await ImagePicker.pickImage(source: source);
+        f = await ImagePicker.pickImage(source: source,maxWidth: setting['width'],  maxHeight: setting['height']);
+      else
+        f = await ImagePicker.pickImage(source: source);
       if(f != null) {
         setState(() => mPhoto = f
         );
