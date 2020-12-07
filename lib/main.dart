@@ -89,6 +89,7 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
   Map<String, dynamic> setting;
   int fCount = 0;
   List<String> uploadNameList = List<String>();
+  bool flag = false;
   //var my_setting;
 
 
@@ -133,7 +134,7 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
                 children: <Widget>[
                   Row(
                     children: [
-                      Text('sdf'),
+                      Text(preFileName == '' ? '' : preFileName ),
 
                       Flexible( //pre count
                         child: FlatButton(
@@ -231,7 +232,8 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
                 child:FlatButton(
                     child: Icon(Icons.cloud_upload_outlined, size: 60.0,color: mPhoto == null ? Colors.grey : Colors.black),
                  //   padding: EdgeInsets.fromLTRB(0, 0, 50, 10),
-                    onPressed: mPhoto == null ? null : () {uploadButton();}
+                 //    onPressed: mPhoto == null ? null : () {uploadButton();}
+                    onPressed: flag == false ? null : () {uploadButton();}
                 ),
               ),
 
@@ -261,15 +263,16 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
     void onPhoto(ImageSource source) async {
     // await 키워드 때문에 setState 안에서 호출할 수 없다.
       // pickImage 함수 외에 pickVideo 함수가 더 있다.
-      //  File f = await ImagePicker.pickImage(source: source,imageQuality: 80);
       File f;
-
-      if(setting['width'] != 0 && setting['height'] != 0)
-        //f = await ImagePicker.pickImage(source: source);
-        f = await ImagePicker.pickImage(source: source,maxWidth: setting['width'],  maxHeight: setting['height']);
+      if(setting['width'] != 0 && setting['height'] != 0) {
+        f = await ImagePicker.pickImage(source: source,
+            maxWidth:  setting['width'].toDouble(),
+            maxHeight: setting['height'].toDouble());
+      }
       else
         f = await ImagePicker.pickImage(source: source);
       if(f != null) {
+        flag = true;
         setState(() => mPhoto = f
         );
         log('1234');
@@ -277,7 +280,6 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
     }
 
     void getImage() async{
-
       List<Asset> resultList = List<Asset>();
       try {
         resultList = await MultiImagePicker.pickImages(
@@ -306,6 +308,7 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
       //   deptName = deptName +"/"+ deptTextBox.text;
       if(imageList.length > 0 ) {
           var now = new DateTime.now();
+          preFileName = '';
           String fileName1 = DateFormat('yyyy-MM-dd hh-mm-ss.').format(now);
 
           int fileCount = 0;
@@ -319,17 +322,21 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
             if (res == 200) {
               Fluttertoast.showToast(msg: "전송완료 - " + fileCount.toString() + "/" +
                   imageList.length.toString(),
-                  backgroundColor: Colors.white,
-                  textColor: Colors.black,
+                  backgroundColor: Colors.black,
+                  textColor: Colors.white,
                   toastLength: Toast.LENGTH_SHORT,
                   gravity: ToastGravity.TOP);
+                  preFileName =  "전송완료 - " + fileCount.toString() + "/" +
+                      imageList.length.toString();
             }
             else {
               Fluttertoast.showToast(msg: "ERROR! 전송 실패",
-                  backgroundColor: Colors.white,
-                  textColor: Colors.black,
+                  backgroundColor: Colors.black,
+                  textColor: Colors.white,
                   toastLength: Toast.LENGTH_SHORT,
                   gravity: ToastGravity.TOP);
+              preFileName =  "전송실패 - " + fileCount.toString() + "/" +
+                  imageList.length.toString();
             }
             log(" ${res} ");
           }
@@ -360,17 +367,24 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
 
   void uploadButton() async
   {
+    setState(() {
+      flag=false;
+    });
+
       String tempFileName = "";
+      preFileName = '';
       if(deptTextBox.text.trim().isEmpty)
         tempFileName = DateFormat('yyyy-MM-dd hh-mm-ss.').format(new DateTime.now());
-      else
+      else {
         tempFileName = deptTextBox.text;
-
-      if(fCount > 0)
-        tempFileName = tempFileName + '.' +fCount.toString().padLeft(3, '0') +  ".JPG";
-      else
-        tempFileName = tempFileName  +  ".JPG";
-
+        if (fCount > 0)
+          tempFileName =
+              tempFileName + '.' + fCount.toString().padLeft(3, '0');
+        else
+          tempFileName = tempFileName;
+      }
+      preFileName = tempFileName;
+      tempFileName = tempFileName + '.JPG';
       if(setting['width'] != 0)
         await reSizeImg(mPhoto.path);
 
@@ -394,22 +408,23 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
 
       if (res.statusCode == 200) {
         Fluttertoast.showToast(msg: "전송완료 - " ,
-            backgroundColor: Colors.white,
-            textColor: Colors.black,
+            backgroundColor: Colors.black,
+            textColor: Colors.white,
             toastLength: Toast.LENGTH_SHORT,
             gravity: ToastGravity.TOP);
-        preFileName = deptTextBox.text + ' 전송';
+        preFileName = preFileName + ' 전송';
+
       }
       else {
         Fluttertoast.showToast(msg: "ERROR! 전송 실패",
-            backgroundColor: Colors.white,
-            textColor: Colors.black,
+            backgroundColor: Colors.black,
+            textColor: Colors.white,
             toastLength: Toast.LENGTH_SHORT,
             gravity: ToastGravity.TOP);
-        preFileName = deptTextBox.text + ' 오류';
+        preFileName = preFileName + ' 오류';
       }
       setState(() {
-
+        flag=true;
       });
   }
 
@@ -685,7 +700,7 @@ class SettingPageState extends State<SettingPage>{
               ),
               ListTile(
                 leading: Icon(Icons.device_unknown),
-                title: Text('파일 기본 이'),
+                title: Text('파일 기본 이름'),
                 subtitle: Text(setting['FileName']),
                 onTap: (){
                   showDialog(
@@ -744,8 +759,8 @@ class SettingPageState extends State<SettingPage>{
                                       imgHeight.text = '0';
                                     else
                                       imgHeight.text = imgHeight.text.trim();
-                                    setting['width'] = double.parse(imgWidth.text);
-                                    setting['height'] = double.parse(imgHeight.text);
+                                    setting['width'] = int.parse(imgWidth.text);
+                                    setting['height'] = int.parse(imgHeight.text);
                                     Hive.box('config').put('width', setting['width']);
                                     Hive.box('config').put('height', setting['height']);
                                     Navigator.pop(context);
