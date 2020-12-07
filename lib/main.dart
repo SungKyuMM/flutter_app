@@ -15,10 +15,13 @@ import 'package:intl/intl.dart';
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 import 'package:path/path.dart';
 //import 'package:camera/camera.dart';
+import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
-
-void main() {
+void main() async{
  // WidgetsFlutterBinding.ensureInitialized();   SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft]).then((_) {
+    await Hive.initFlutter();
+    await Hive.openBox('config');
     runApp(MyApp());
  // });
 }
@@ -82,6 +85,8 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
   String deptName  ;
   String preFileName = '';
   Map<String, dynamic> setting;
+  int fCount = 0;
+  List<String> uploadNameList = List<String>();
   //var my_setting;
 
 
@@ -96,16 +101,18 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
   }
 
   void loadAsset() async {
+    var my_setting = jsonDecode(await rootBundle.loadString('images/run.json'));
+    setting = my_setting;
 
-    final directory = (await getApplicationDocumentsDirectory()).path;
-    if(await File('$directory/images/run.json').exists())
-      setting = jsonDecode(await File('$directory/images/run.json').readAsString());
-    else{
-      var my_setting = jsonDecode(await rootBundle.loadString('images/run.json'));
-      setting = my_setting;
-    }
-    if(setting['FileName'].toString().isNotEmpty)
-      deptTextBox.text = setting['FileName'].toString();
+
+    setting['dept'] = Hive.box('config').get('dept') == null ? 'Other' : Hive.box('config').get('dept');
+    setting['User'] = Hive.box('config').get('User') == null ? '' : Hive.box('config').get('User');
+    setting['width'] = Hive.box('config').get('width') == null ? 0 : Hive.box('config').get('width');
+    setting['height'] = Hive.box('config').get('height') == null ? 0 : Hive.box('config').get('height');
+    setting['FileName'] = Hive.box('config').get('FileName') == null ? '' : Hive.box('config').get('FileName');
+
+    deptTextBox.text = setting['FileName'];
+
   }
 
   
@@ -113,35 +120,99 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
   Widget build(BuildContext context) {
    // Widget photo = (mPhoto != null) ? Image.file(mPhoto) : Text('EMPTY');
     return Container(
-      child: Column(
+      // child : SingleChildScrollView(
+      //   physics: NeverScrollableScrollPhysics(),
 
+      child: Column(
         children: <Widget>[
         // 버튼을 제외한 영역의 가운데 출력
           Expanded(
-              child:Center(
-                child: Text(preFileName,)
+              child:Column(
+                children: <Widget>[
+                  Row(
+                    children: [
+                      Text('sdf'),
+
+                      Flexible( //pre count
+                        child: FlatButton(
+                            child: Icon(Icons.keyboard_arrow_left),
+                            //   padding: EdgeInsets.fromLTRB(0, 0, 50, 10),
+                            onPressed: (){
+                              if(fCount > 0) {
+                                setState(() {
+                                  fCount = fCount - 1;
+                                });
+                              }
+                            }
+                        ),
+                      ),
+
+                      Flexible( //next count
+                        child: FlatButton(
+                            child: Icon(Icons.keyboard_arrow_right),
+                            //   padding: EdgeInsets.fromLTRB(0, 0, 50, 10),
+                            onPressed: (){
+                              setState(() {
+                                fCount = fCount+1;
+                              });
+                             // deptTextBox.text.replaceAll('.'+temp, '.'+fCount.toString().padLeft(3, '0'));
+                            }
+                        ),
+                      ),
+                      Flexible(
+                        child: FlatButton(
+                            child: Icon(Icons.autorenew_rounded),
+                            //   padding: EdgeInsets.fromLTRB(0, 0, 50, 10),
+                            onPressed: (){
+                              deptTextBox.text = setting['FileName'];
+                            }
+                        ),
+                      ),
+                      Flexible(
+                         child: FlatButton(
+                            child: Icon(Icons.settings),
+                            //   padding: EdgeInsets.fromLTRB(0, 0, 50, 10),
+                            onPressed: (){
+                              Navigator.push(context,
+                                  MaterialPageRoute(builder: (context) => SettingPage(setting) ));
+                            }
+                        ),
+                      )
+                    ],
+                  ),
+                  Center(
+                    child: TextField( decoration: InputDecoration(
+                      border: OutlineInputBorder(),
+                      labelText:  'FileName' + (fCount ==0 ? '' : ' +.'+ fCount.toString().padLeft(3, '0')),
+                    ),
+
+                      controller: deptTextBox,
+                    ),
+                  ),
+                ],
+
               )
           ),
-          Expanded(
-              // margin: const EdgeInsets.fromLTRB(5, 60, 5, 5),
-           //    padding: new EdgeInsets.all(5),
-            // color: Colors.black,
 
-            child:Center(
-              child: TextField( decoration: InputDecoration(
-                border: OutlineInputBorder(),
-                labelText:  'FileName',
-                ),
-
-                controller: deptTextBox,
-              ),
-            ),
-         //   margin: const EdgeInsets.only(top:60),
-          ),
+         //  Expanded(
+         //      // margin: const EdgeInsets.fromLTRB(5, 60, 5, 5),
+         //   //    padding: new EdgeInsets.all(5),
+         //    // color: Colors.black,
+         //    child:Center(
+         //      child: TextField( decoration: InputDecoration(
+         //        border: OutlineInputBorder(),
+         //        labelText:  'FileName',
+         //        ),
+         //
+         //        controller: deptTextBox,
+         //      ),
+         //    ),
+         // //   margin: const EdgeInsets.only(top:60),
+         //  ),
           Expanded(
             //alignment: Alignment.center,
             child:Center(
-              child: mPhoto ==null ? null : Image.asset(mPhoto.path),
+              child: mPhoto == null ? null : Image.file(mPhoto,fit: BoxFit.contain,),
             )
           ),
           Row(
@@ -151,11 +222,12 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
               //   onPressed: () => onPhoto(ImageSource.gallery),
               //   // 앨범에서 선택
               // ),
-
-              FlatButton(
-                  onPressed: () => scanBarcodeNormal(),
-                  child: Image.asset('images/barcodeIcon.png',width: 100,height: 50),
-                          padding:new EdgeInsets.all(5) ,
+              Flexible(
+                child:FlatButton(
+                    onPressed: () => scanBarcodeNormal(),
+                    child: Image.asset('images/barcodeIcon.png',width: 100,height: 50),
+                            padding:new EdgeInsets.all(5) ,
+                ),
               ),
               FlatButton(
                 // onTap: () => onPhoto(ImageSource.camera),
@@ -166,44 +238,32 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
 
                  // 사진 찍기
                ),
-              // IconButton(
-              //     icon: Icon(Icons.cloud_upload_outlined, size: 60.0,color: mPhoto == null ? Colors.grey : Colors.black),
-              //     padding: EdgeInsets.fromLTRB(0, 0, 50, 10),
-              //     onPressed: mPhoto != null ? null : () {uploadButton();}
-              // ),
-              FlatButton(
-                  child: Icon(Icons.cloud_upload_outlined, size: 60.0,color: mPhoto == null ? Colors.grey : Colors.black),
-               //   padding: EdgeInsets.fromLTRB(0, 0, 50, 10),
-                  onPressed: mPhoto == null ? null : () {uploadButton();}
+              Flexible(
+                child:FlatButton(
+                    child: Icon(Icons.cloud_upload_outlined, size: 60.0,color: mPhoto == null ? Colors.grey : Colors.black),
+                 //   padding: EdgeInsets.fromLTRB(0, 0, 50, 10),
+                    onPressed: mPhoto == null ? null : () {uploadButton();}
+                ),
               ),
 
-
-              RaisedButton(
-                child: Text('사진선택'),
-                onPressed: imageList.length==0 ? () { getImage(); } : null
+              Flexible(
+                child:RaisedButton(
+                  child: Text('사진선택'),
+                  onPressed: imageList.length==0 ? () { getImage(); } : null
               ),
-
+              ),
             ],
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
             ),
-          Row(
-              children: <Widget>[
-                RaisedButton(
-                    child: Text('setting'),
-                    onPressed: (){
-                      Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => SettingPage(setting) ));
-                    },
-                ),
 
-
-                ]
-          )
     ],
     // 화면 하단에 배치
       mainAxisAlignment: MainAxisAlignment.center,
-        ),
+
+      ),
+      //////////
+   //   )
     );
     }
 
@@ -213,27 +273,17 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
     // await 키워드 때문에 setState 안에서 호출할 수 없다.
       // pickImage 함수 외에 pickVideo 함수가 더 있다.
       //  File f = await ImagePicker.pickImage(source: source,imageQuality: 80);
-        File f = await ImagePicker.pickImage(source: source);
-        if(f != null) {
+      File f = await ImagePicker.pickImage(source: source);
 
-          setState(() => mPhoto = f
-          );
-          // var request = http.MultipartRequest('POST',
-          //     Uri.parse("http://food-back.kr.sgs.com/board/receivephoto"));
-          // request.files.add(
-          //     await http.MultipartFile.fromPath(
-          //       'file',
-          //       f.path,
-          //     )
-          // );
-          // //request.fields['fileKey']= "file";
-          // request.fields['fileName'] = "TEST/Tqwer.jpg";
-          // request.fields['dept'] = "TEST/T";
-
-         // var res = await request.send();
-
-          // log(" ${res.statusCode} ");
-          // log(" ${res.stream.bytesToString()} ");
+      // if(setting['width'] != 0 && setting['height'] != 0)
+      //   //f = await ImagePicker.pickImage(source: source);
+      //   f = await ImagePicker.pickImage(source: source,maxWidth: setting['width'],  maxHeight: setting['height']);
+      // else
+      //   f = await ImagePicker.pickImage(source: source);
+      if(f != null) {
+        setState(() => mPhoto = f
+        );
+        log('1234');
       }
     }
 
@@ -311,10 +361,6 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
         barcodeScanRes = 'Failed to get platform version.';
       }
 
-
-    // If the widget was removed from the tree while the asynchronous platform
-    // message was in flight, we want to discard the reply rather than calling
-    // setState to update our non-existent appearance.
     if (!mounted) return;
 
     setState(() {
@@ -331,7 +377,10 @@ class ImageAndCameraState extends State<ImageAndCamera> { // 파일 경로 문�
       else
         tempFileName = deptTextBox.text;
 
-      tempFileName = tempFileName + ".JPG";
+      if(fCount > 0)
+        tempFileName = tempFileName + '.' +fCount.toString().padLeft(3, '0') +  ".JPG";
+      else
+        tempFileName = tempFileName  +  ".JPG";
 
       if(setting['width'] != 0)
         await reSizeImg(mPhoto.path);
@@ -524,28 +573,28 @@ class SettingPageState extends State<SettingPage>{
   void setState(fn) {
     super.setState(fn);
     // if(setting != null)
-       jsonWriteFile();
+     //  jsonWriteFile();
   }
 
-  void jsonWriteFile() async{
-
-    // final directory = (await getApplicationDocumentsDirectory()).path;
-    // await File('$directory/images/run.json').writeAsString(jsonEncode(setting));
-    log('???');
-    final _filePath = await _localFile;
-    _filePath.writeAsString(jsonEncode(setting));
-    log('???123');
-
-  }
-  Future<String> get _localPath async {
-    final directory = await getApplicationDocumentsDirectory();
-    return directory.path;
-  }
-
-  Future<File> get _localFile async {
-    final path = await _localPath;
-    return File('$path/images');
-  }
+  // void jsonWriteFile() async{
+  //
+  //   // final directory = (await getApplicationDocumentsDirectory()).path;
+  //   // await File('$directory/images/run.json').writeAsString(jsonEncode(setting));
+  //   log('???');
+  //   final _filePath = await _localFile;
+  //   _filePath.writeAsString(jsonEncode(setting));
+  //   log(_filePath.path);
+  //
+  // }
+  // Future<String> get _localPath async {
+  //   final directory = await getApplicationDocumentsDirectory();
+  //   return directory.path;
+  // }
+  //
+  // Future<File> get _localFile async {
+  //   final path = await _localPath;
+  //   return File('$path/images');
+  // }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -573,7 +622,7 @@ class SettingPageState extends State<SettingPage>{
                             onPressed: (){
                               setState(() {
                                 deptTemp = setting['dept'];
-
+                                Hive.box('config').put('dept', deptTemp);
                                 Navigator.pop(context);
                               });
                             },
@@ -604,7 +653,7 @@ class SettingPageState extends State<SettingPage>{
               ListTile(
                 leading: Icon(Icons.person_rounded),
                 title: Text('사용자'),
-                subtitle: Text(setting['User']),
+                subtitle: Text(setting['User'] == '' ? '사용안함' : setting['User']),
 
                 onTap: (){
                   showDialog(
@@ -618,7 +667,7 @@ class SettingPageState extends State<SettingPage>{
                               onPressed: (){
                                 setState(() {
                                   setting['User'] = UserName.text = UserName.text.trim();
-
+                                  Hive.box('config').put('User', setting['User']);
                                   //setting['User'] = int.parse(UserName.text);
                                   Navigator.pop(context);
                                 });
@@ -647,7 +696,7 @@ class SettingPageState extends State<SettingPage>{
               ),
               ListTile(
                 leading: Icon(Icons.device_unknown),
-                title: Text('파일 기본 값'),
+                title: Text('파일 기본 이'),
                 subtitle: Text(setting['FileName']),
                 onTap: (){
                   showDialog(
@@ -660,6 +709,7 @@ class SettingPageState extends State<SettingPage>{
                                 onPressed: (){
                                   setState(() {
                                     setting['FileName'] = FileName.text = FileName.text.trim();
+                                     Hive.box('config').put('FileName',  setting['FileName']);
                                     Navigator.pop(context);
                                   });
                                 },
@@ -705,8 +755,10 @@ class SettingPageState extends State<SettingPage>{
                                       imgHeight.text = '0';
                                     else
                                       imgHeight.text = imgHeight.text.trim();
-                                    setting['width'] = int.parse(imgWidth.text);
-                                    setting['height'] = int.parse(imgHeight.text);
+                                    setting['width'] = double.parse(imgWidth.text);
+                                    setting['height'] = double.parse(imgHeight.text);
+                                    Hive.box('config').put('width', setting['width']);
+                                    Hive.box('config').put('height', setting['height']);
                                     Navigator.pop(context);
                                   });
                                 },
